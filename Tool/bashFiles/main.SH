@@ -44,10 +44,14 @@ RetrocfgChange()
 
 # Menu Screen. Select option
 OPTION=$(whiptail --title "BashTool_ROPI_RCA" --menu "Choose an option" 15 60 0 --cancel-button Exit --ok-button Select \
-	"1" "HDMI Video 720p & Audio." \
-	"2" "RCA Video (PAL) & Audio. Overscan fixed." \
-	"3" "RCA Video (NTSC) & Audio. Overscan fixed." \
-	"4" "HDMI Video 720p. RCA Audio" \
+	"1" "HDMI Video 720p & Audio (default)." \
+	"2" "HDMI Video 720p & Analog Audio" \
+	"3" "Analog Video (PAL) & Audio. Overscan fixed." \
+	"4" "Analog Video (NTSC) & Audio. Overscan fixed." \
+	"5" "Default Analog Video (PAL) & Audio." \
+	"6" "Default Analog Video (NTSC) & Audio." \
+	"7" "Switch to USB Audio." \
+	"8" "Switch to Analog Audio." \
 	3>&1 1>&2 2>&3)
 
 # Manage Option Selected. Configure System Video & Audio Output
@@ -62,10 +66,10 @@ if [ $OPTION = "1" ]; then # Set: HDMI Video & Audio
 	FexChange "/boot/script.fex" "disp_init" "disp_mode" "0" # Use Screen0 configs
 	FexChange "/boot/script.fex" "disp_init" "screen0_output_type" "3" # HDMI
 	FexChange "/boot/script.fex" "disp_init" "screen0_output_mode" "5" # 720p
-        FexChange "/boot/script.fex" "disp_init" "fb0_width" "0" # underscan setting
-        FexChange "/boot/script.fex" "disp_init" "fb0_height" "0" # underscan setting
-        FexChange "/boot/script.fex" "disp_init" "fb1_width" "0" # underscan setting
-        FexChange "/boot/script.fex" "disp_init" "fb1_height" "0" # underscan setting
+        FexChange "/boot/script.fex" "disp_init" "fb0_width" "0" # default setting
+        FexChange "/boot/script.fex" "disp_init" "fb0_height" "0" # default setting
+        FexChange "/boot/script.fex" "disp_init" "fb1_width" "0" # default setting
+        FexChange "/boot/script.fex" "disp_init" "fb1_height" "0" # default setting
 	FexChange "/boot/script.fex" "hdmi_para" "hdmi_used" "1" # Turn on HDMI
 	FexChange "/boot/script.fex" "tv_para" "tv_used" "0" # Turn off RCA
 	FexChange "/boot/script.fex" "audiohub" "hub_used" "0" # Disable Audio HUB
@@ -78,11 +82,42 @@ if [ $OPTION = "1" ]; then # Set: HDMI Video & Audio
 	
 	######## Audio setup
 	RetrocfgChange '/opt/retropie/configs/all/retroarch.cfg' 'audio_device' '""'
-	#cp -a files/hdmi/bgmusic.py /home/pi/RetroPie/music/bgmusic.py
 	cp -a files/hdmi/asound.conf /etc/asound.conf
 	cp -a files/hdmi/asoundrc /home/pi/.asoundrc
 	
-elif [ $OPTION = "2" ]; then # Set: RCA Video (PAL) & Audio
+elif [ $OPTION = "2" ]; then # Set: HDMI Video. Analog Audio
+	echo "Configuring, please wait..."
+	sleep 2
+	
+	######## Video setup
+
+	# Script.bin modification
+	bin2fex /boot/script.bin /boot/script.fex
+	FexChange "/boot/script.fex" "disp_init" "disp_mode" "0" # Use Screen0 configs
+	FexChange "/boot/script.fex" "disp_init" "screen0_output_type" "3" # HDMI
+	FexChange "/boot/script.fex" "disp_init" "screen0_output_mode" "5" # 720p
+        FexChange "/boot/script.fex" "disp_init" "fb0_width" "0" # default setting
+        FexChange "/boot/script.fex" "disp_init" "fb0_height" "0" # default setting
+        FexChange "/boot/script.fex" "disp_init" "fb1_width" "0" # default setting
+        FexChange "/boot/script.fex" "disp_init" "fb1_height" "0" # default setting
+	FexChange "/boot/script.fex" "hdmi_para" "hdmi_used" "1" # Turn on HDMI
+	FexChange "/boot/script.fex" "tv_para" "tv_used" "0" # Turn off RCA
+	FexChange "/boot/script.fex" "audiohub" "hub_used" "1" # Enable Audio HUB
+	FexChange "/boot/script.fex" "audiohub" "spdif_used" "0" # Disable SPDIF
+	fex2bin /boot/script.fex /boot/script.bin
+
+	# TV module unload
+	sed -i '/tv/d' /etc/modules # Delete "tv" line
+	sed -i '/^ *$/d' /etc/modules # Delete empty lines
+	
+	######## Audio setup
+	RetrocfgChange '/opt/retropie/configs/all/retroarch.cfg' 'audio_device' '"hw:0,0"'
+        RetrocfgChange '/opt/retropie/configs/all/retroarch.cfg' 'audio_driver' '"sdl2"'
+	cp -a files/rca/asound.conf /etc/asound.conf
+	cp -a files/rca/asoundrc /home/pi/.asoundrc
+	amixer -c 0 set "Audio lineout" unmute
+
+elif [ $OPTION = "3" ]; then # Set: Analog Video (PAL) & Audio
 	echo "Configuring, please wait..."
 	sleep 2
 	
@@ -116,13 +151,11 @@ elif [ $OPTION = "2" ]; then # Set: RCA Video (PAL) & Audio
 	# Audio setup
 	RetrocfgChange '/opt/retropie/configs/all/retroarch.cfg' 'audio_device' '"hw:0,0"'
         RetrocfgChange '/opt/retropie/configs/all/retroarch.cfg' 'audio_driver' '"sdl2"'
-	#cp -a /home/pi/RetroPie/music/bgmusic.py /home/pi/RetroPie/music/bgmusic_disable.py
-	#rm -rf /home/pi/RetroPie/music/bgmusic.py
 	cp -a files/rca/asound.conf /etc/asound.conf
 	cp -a files/rca/asoundrc /home/pi/.asoundrc
 	amixer -c 0 set "Audio lineout" unmute
 
-elif [ $OPTION = "3" ]; then # Set: RCA Video (NTSC) & Audio
+elif [ $OPTION = "4" ]; then # Set: Analog Video (NTSC) & Audio
 	echo "Configuring, please wait..."
 	sleep 2
 	
@@ -153,29 +186,30 @@ elif [ $OPTION = "3" ]; then # Set: RCA Video (NTSC) & Audio
 	sed -i '/tvout/d' /etc/rc.local # Delete previous tvout entries
 	sed -i -e '$i \sudo /home/pi/RetrOrangePi/overscan_fix/src/bin/Release/tvout -m -x 50 -y 20\n' /etc/rc.local
 
-	
 	# Audio setup
 	RetrocfgChange '/opt/retropie/configs/all/retroarch.cfg' 'audio_device' '"hw:0,0"'
         RetrocfgChange '/opt/retropie/configs/all/retroarch.cfg' 'audio_driver' '"sdl2"'
-	#cp -a /home/pi/RetroPie/music/bgmusic.py /home/pi/RetroPie/music/bgmusic_disable.py
-	#rm -rf /home/pi/RetroPie/music/bgmusic.py
 	cp -a files/rca/asound.conf /etc/asound.conf
 	cp -a files/rca/asoundrc /home/pi/.asoundrc
 	amixer -c 0 set "Audio lineout" unmute
 
-elif [ $OPTION = "4" ]; then # Set: HDMI Video. RCA Audio
+elif [ $OPTION = "5" ]; then # Set: Default Analog Video (PAL) & Audio
 	echo "Configuring, please wait..."
 	sleep 2
 	
-	######## Video setup
-
+	# Video setup
+	
 	# Script.bin modification
 	bin2fex /boot/script.bin /boot/script.fex
-	FexChange "/boot/script.fex" "disp_init" "disp_mode" "0" # Use Screen0 configs
-	FexChange "/boot/script.fex" "disp_init" "screen0_output_type" "3" # HDMI
-	FexChange "/boot/script.fex" "disp_init" "screen0_output_mode" "5" # 720p
-	FexChange "/boot/script.fex" "hdmi_para" "hdmi_used" "1" # Turn on HDMI
-	FexChange "/boot/script.fex" "tv_para" "tv_used" "0" # Turn off RCA
+	FexChange "/boot/script.fex" "disp_init" "disp_mode" "1" # Use Screen1 configs
+	FexChange "/boot/script.fex" "disp_init" "screen1_output_type" "2" # TV
+	FexChange "/boot/script.fex" "disp_init" "screen1_output_mode" "11" # PAL
+        FexChange "/boot/script.fex" "disp_init" "fb0_width" "0" # default setting
+        FexChange "/boot/script.fex" "disp_init" "fb0_height" "0" # default setting
+        FexChange "/boot/script.fex" "disp_init" "fb1_width" "0" # default setting
+        FexChange "/boot/script.fex" "disp_init" "fb1_height" "0" # default setting
+     	FexChange "/boot/script.fex" "hdmi_para" "hdmi_used" "0" # Turn off HDMI
+	FexChange "/boot/script.fex" "tv_para" "tv_used" "1" # Turn on RCA
 	FexChange "/boot/script.fex" "audiohub" "hub_used" "1" # Enable Audio HUB
 	FexChange "/boot/script.fex" "audiohub" "spdif_used" "0" # Disable SPDIF
 	fex2bin /boot/script.fex /boot/script.bin
@@ -183,12 +217,72 @@ elif [ $OPTION = "4" ]; then # Set: HDMI Video. RCA Audio
 	# TV module unload
 	sed -i '/tv/d' /etc/modules # Delete "tv" line
 	sed -i '/^ *$/d' /etc/modules # Delete empty lines
+	echo "tv" >> /etc/modules
 	
-	######## Audio setup
+	# cleaning overscan leftovers
+        sed -i '/tvout/d' /etc/rc.local # Delete previous tvout entries
+
+	# Audio setup
 	RetrocfgChange '/opt/retropie/configs/all/retroarch.cfg' 'audio_device' '"hw:0,0"'
         RetrocfgChange '/opt/retropie/configs/all/retroarch.cfg' 'audio_driver' '"sdl2"'
-	#cp -a /home/pi/RetroPie/music/bgmusic.py /home/pi/RetroPie/music/bgmusic_disable.py
-	#rm -rf /home/pi/RetroPie/music/bgmusic.py
+	cp -a files/rca/asound.conf /etc/asound.conf
+	cp -a files/rca/asoundrc /home/pi/.asoundrc
+	amixer -c 0 set "Audio lineout" unmute
+
+elif [ $OPTION = "6" ]; then # Set: Default Analog Video (NTSC) & Audio
+	echo "Configuring, please wait..."
+	sleep 2
+	
+	# Video setup
+	
+	# Script.bin modification
+	bin2fex /boot/script.bin /boot/script.fex
+	FexChange "/boot/script.fex" "disp_init" "disp_mode" "1" # Use Screen1 configs
+	FexChange "/boot/script.fex" "disp_init" "screen1_output_type" "2" # TV
+	FexChange "/boot/script.fex" "disp_init" "screen1_output_mode" "14" # NTSC
+        FexChange "/boot/script.fex" "disp_init" "fb0_width" "0" # default setting
+        FexChange "/boot/script.fex" "disp_init" "fb0_height" "0" # default setting
+        FexChange "/boot/script.fex" "disp_init" "fb1_width" "0" # default setting
+        FexChange "/boot/script.fex" "disp_init" "fb1_height" "0" # default setting
+     	FexChange "/boot/script.fex" "hdmi_para" "hdmi_used" "0" # Turn off HDMI
+	FexChange "/boot/script.fex" "tv_para" "tv_used" "1" # Turn on RCA
+	FexChange "/boot/script.fex" "audiohub" "hub_used" "1" # Enable Audio HUB
+	FexChange "/boot/script.fex" "audiohub" "spdif_used" "0" # Disable SPDIF
+	fex2bin /boot/script.fex /boot/script.bin
+
+	# TV module unload
+	sed -i '/tv/d' /etc/modules # Delete "tv" line
+	sed -i '/^ *$/d' /etc/modules # Delete empty lines
+	echo "tv" >> /etc/modules
+
+	# cleaning overscan leftovers
+        sed -i '/tvout/d' /etc/rc.local # Delete previous tvout entries
+
+	# Audio setup
+	RetrocfgChange '/opt/retropie/configs/all/retroarch.cfg' 'audio_device' '"hw:0,0"'
+        RetrocfgChange '/opt/retropie/configs/all/retroarch.cfg' 'audio_driver' '"sdl2"'
+	cp -a files/rca/asound.conf /etc/asound.conf
+	cp -a files/rca/asoundrc /home/pi/.asoundrc
+	amixer -c 0 set "Audio lineout" unmute
+
+elif [ $OPTION = "7" ]; then # Set: Switch to USB Audio
+	echo "Configuring, please wait..."
+	sleep 2
+
+	# Audio setup
+	RetrocfgChange '/opt/retropie/configs/all/retroarch.cfg' 'audio_device' '"hw:2,0"'
+        RetrocfgChange '/opt/retropie/configs/all/retroarch.cfg' 'audio_driver' '"sdl2"'
+	cp -a files/usb/asound.conf /etc/asound.conf
+	cp -a files/usb/asoundrc /home/pi/.asoundrc
+	amixer -c 0 set "Audio lineout" unmute
+
+elif [ $OPTION = "8" ]; then # Set: Switch to Analog Audio
+	echo "Configuring, please wait..."
+	sleep 2
+
+	# Audio setup
+	RetrocfgChange '/opt/retropie/configs/all/retroarch.cfg' 'audio_device' '"hw:0,0"'
+        RetrocfgChange '/opt/retropie/configs/all/retroarch.cfg' 'audio_driver' '"sdl2"'
 	cp -a files/rca/asound.conf /etc/asound.conf
 	cp -a files/rca/asoundrc /home/pi/.asoundrc
 	amixer -c 0 set "Audio lineout" unmute

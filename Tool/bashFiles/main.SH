@@ -128,10 +128,10 @@ elif [ $OPTION = "3" ]; then # Set: Analog Video (PAL) & Audio
 	FexChange "/boot/script.fex" "disp_init" "disp_mode" "1" # Use Screen1 configs
 	FexChange "/boot/script.fex" "disp_init" "screen1_output_type" "2" # TV
 	FexChange "/boot/script.fex" "disp_init" "screen1_output_mode" "11" # PAL
-        FexChange "/boot/script.fex" "disp_init" "fb0_width" "672" # underscan setting
-        FexChange "/boot/script.fex" "disp_init" "fb0_height" "448" # underscan setting
-        FexChange "/boot/script.fex" "disp_init" "fb0_width" "672" # underscan setting
-        FexChange "/boot/script.fex" "disp_init" "fb0_height" "448" # underscan setting
+        FexChange "/boot/script.fex" "disp_init" "fb0_width" "664" # underscan setting
+        FexChange "/boot/script.fex" "disp_init" "fb0_height" "544" # underscan setting
+        FexChange "/boot/script.fex" "disp_init" "fb1_width" "664" # underscan setting
+        FexChange "/boot/script.fex" "disp_init" "fb1_height" "544" # underscan setting
      	FexChange "/boot/script.fex" "hdmi_para" "hdmi_used" "0" # Turn off HDMI
 	FexChange "/boot/script.fex" "tv_para" "tv_used" "1" # Turn on RCA
 	FexChange "/boot/script.fex" "audiohub" "hub_used" "1" # Enable Audio HUB
